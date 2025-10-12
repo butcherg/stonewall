@@ -7,10 +7,12 @@
 #include <cstdlib>
 #include <limits>
 #include <set>
+#include <algorithm>
 
 #include "heightmap.h"
 
 #include "manifold/manifold.h"
+#include "manifold/cross_section.h"
 #include "meshio.h"
 
 #include "assimp/Exporter.hpp"
@@ -463,14 +465,14 @@ int main(int argc, char **argv) {
 			
 			//writeTexture(tex, "stonetest/tex"+to_string(c)+".txt");	
 			
-			////put bottom of texture at zero:
-			//vector<vector<float>> tex = readTexture("texture.txt");
+			//put bottom of texture at zero:
 			float texmin = minTextureValue(tex);
 			subtractValTexture(tex, texmin);
 			
 			int w = tex.size();
 			int h = tex[0].size();
 			
+			//make manifold mesh from the heightmap texture:
 			std::pair<std::vector<vec3f>, std::vector<vec3i>> msh = heightmap2Mesh(tex, 1);
 			auto points = msh.first;
 			auto triangles = msh.second;
@@ -492,16 +494,15 @@ int main(int argc, char **argv) {
 			
 			//make a Manifold of the contour polygon:
 			manifold::SimplePolygon p;
-			for (const auto& point : contour) {
-				manifold::vec2 vec = {(double) point.x, (double) point.y};
-				p.push_back(vec);
-				//cout << point.x << "," << point.y << endl;
-			}
+			for (const auto& point : contour) 
+				p.push_back({(double) point.x, (double) point.y});
+			if (contourArea(contour, true) < 0.0) std::reverse(p.begin(), p.end());  //determines winding of the polygon, reverses order of points if not CCW
 			manifold::Polygons xc;
 			xc.push_back(p);
+			//xc = manifold::CrossSection(xc).ToPolygons();
 			manifold::Manifold stonecont = manifold::Manifold::Extrude(xc,10);
 			
-			//manifold::ExportMesh("stonetest/cont"+to_string(c)+".stl", stonecont.GetMeshGL(), {});
+			manifold::ExportMesh("stonetest/cont"+to_string(c)+".stl", stonecont.GetMeshGL(), {});
 			
 			//translate contour down to encompass texture:
 			stonecont = stonecont.Translate({0.0, 0.0, -5.0});
