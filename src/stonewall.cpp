@@ -192,25 +192,50 @@ vector<Point> scaleContour(vector<Point> contour, float xscale, float yscale)
 	int cx = int(M.m10 / M.m00);
 	int cy = int(M.m01 / M.m00);
 	c = translateContour(contour, -cx, -cy);
-	resize(c, c, Size(), xscale, yscale, INTER_CUBIC);
+	for (auto p : c) {
+		p.x *= xscale;
+		p.y *= yscale;
+	}
 	c = translateContour(c, cx, cy);
 	return c;
 }
 
 
 void bevelTexture(vector<vector<float>> &texture, vector<Point> contour)
-{	
-	//printf("bevelTexture...\n"); fflush(stdout);
+{
+	Rect r = boundingRect(contour);
+	float xscale = (r.width-1.0) / r.width;
+	float yscale = (r.height-1.0) / r.height;
+	vector<Point> contour1 =  scaleContour(contour, xscale, yscale);
+	
+	xscale = (r.width-2.0) / r.width;
+	yscale = (r.height-2.0) / r.height;
+	vector<Point> contour2 =  scaleContour(contour, xscale, yscale);
+
 	for (int x=0; x<texture.size(); x++) {
 		for (int y=0; y<texture[x].size(); y++) {
 			Point pt(y,x);
 			double b = pointPolygonTest(contour, pt, false);
 			if (b == 0.0)
-				texture[x][y] = 0.5;
+				texture[x][y] = 0.0;
 			else if (b == -1)
 				texture[x][y] = 0.0;
 			else
 				texture[x][y] = 1.0;
+		}
+	}
+	for (int x=0; x<texture.size(); x++) {
+		for (int y=0; y<texture[x].size(); y++) {
+			Point pt(y,x);
+			double b = pointPolygonTest(contour1, pt, false);
+			if (b == 0.0) texture[x][y] = 0.33;
+		}
+	}
+	for (int x=0; x<texture.size(); x++) {
+		for (int y=0; y<texture[x].size(); y++) {
+			Point pt(y,x);
+			double b = pointPolygonTest(contour2, pt, false);
+			if (b == 0.0) texture[x][y] = 0.66;
 		}
 	}
 }
