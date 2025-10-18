@@ -115,6 +115,7 @@ public:
 		hm=htmp.hm;
 		w=htmp.w;
 		h=htmp.h;
+		z = htmp.z;
 		triangulated = htmp.triangulated;
 		vertexed = htmp.vertexed;
 		centervertexed = htmp.centervertexed;
@@ -221,7 +222,6 @@ public:
 	{
 		if (triangulated) return false;
 		
-		
 		//add center vertices:
 		int centerVertexOffset = m.points.size();
 		for (int y = 0; y < h-1; ++y) {
@@ -253,6 +253,26 @@ public:
 		triangulated = true;
 		return true;
 	}
+	
+	bool centerTriangulate(Mesh &m)
+	{
+		if (triangulated) return false;
+		
+		unsigned center = m.setPt({ (float) w/2, (float) h/2, hm[0][0].h});
+		
+		std::vector<unsigned> he = getEdgeIndices();
+		
+		for(int i=1; i<he.size(); i++) 
+			m.setTri({center, he[i], he[i-1]});
+	
+		int i = he.size()-1;
+		int j = 0;
+	
+		m.setTri({center, he[j], he[i]});
+		
+		triangulated = true;
+		return true;
+	}
 
 	std::vector<unsigned> getEdgeIndices()
 	{
@@ -277,7 +297,7 @@ public:
 
 //private:
 	std::vector<std::vector<ht>> hm;
-	int w, h;
+	int w, h, z;
 	bool triangulated, vertexed, centervertexed;
 };
 
@@ -296,7 +316,8 @@ void heightmap2mesh(std::string filename, Mesh &mesh)
 	//build base floor mesh:
 	base.setHeight(-1);
 	base.buildVertices(mesh);
-	base.twoTriangulate(mesh);
+	//base.twoTriangulate(mesh);
+	base.centerTriangulate(mesh);
 	
 	//connect the heightmap and base meshes:
 	std::vector<unsigned> he = hmp.getEdgeIndices();
