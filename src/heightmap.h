@@ -350,7 +350,7 @@ std::pair<std::vector<vec3f>, std::vector<vec3i>> heightmap2Mesh(std::vector<std
 	//build base floor mesh:
 	base.setHeight(-baseheight);
 	base.buildVertices(mesh);
-	base.twoTriangulate(mesh);
+	base.centerTriangulate(mesh);
 	
 	//connect the heightmap and base meshes:
 	std::vector<unsigned> he = hmp.getEdgeIndices();
