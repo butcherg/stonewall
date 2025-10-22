@@ -16,6 +16,8 @@
 #include "manifold/cross_section.h"
 #include "meshio.h"
 
+#include "libnoisetool.h"
+
 #include "assimp/Exporter.hpp"
 #include "assimp/Importer.hpp"
 #include "assimp/material.h"
@@ -192,7 +194,7 @@ vector<Point> scaleContour(vector<Point> contour, float xscale, float yscale)
 	int cx = int(M.m10 / M.m00);
 	int cy = int(M.m01 / M.m00);
 	c = translateContour(contour, -cx, -cy);
-	for (auto p : c) {
+	for (auto &p : c) {
 		p.x *= xscale;
 		p.y *= yscale;
 	}
@@ -203,14 +205,7 @@ vector<Point> scaleContour(vector<Point> contour, float xscale, float yscale)
 void bevelTexture(vector<vector<float>> &texture, vector<Point> contour, int bevelevels)
 {
 	Rect r = boundingRect(contour);
-	
-	float xscale = (r.width-1.0) / r.width;
-	float yscale = (r.height-1.0) / r.height;
-	vector<Point> contour1 =  scaleContour(contour, xscale, yscale);
-	
-	xscale = (r.width-2.0) / r.width;
-	yscale = (r.height-2.0) / r.height;
-	vector<Point> contour2 =  scaleContour(contour, xscale, yscale);
+	//cout << "  width: " << r.width << "  height: " << r.height << endl;
 
 	for (int x=0; x<texture.size(); x++) {
 		for (int y=0; y<texture[x].size(); y++) {
@@ -227,15 +222,16 @@ void bevelTexture(vector<vector<float>> &texture, vector<Point> contour, int bev
 	float in = inc;
 	
 	for(int i=1; i<bevelevels; i++) {
-		float xscale = (r.width-(float) i) / r.width;
-		float yscale = (r.height-(float) i) / r.height;
-		vector<Point> contour1 =  scaleContour(contour, xscale, yscale);
-
+		float xscale = ((float) r.width-(float) i) / (float) r.width;
+		float yscale = ((float) r.height-(float) i) / (float) r.height;
+		vector<Point> cont =  scaleContour(contour, xscale, yscale);
+		Rect rc = boundingRect(cont);
+		//cout << setprecision(2)<< "  i: " << i << "  xscale: " << xscale << "  yscale: " << yscale << "  width: " << rc.width << "  height: " << rc.height << " bevel inc: " << in << endl;
 		for (int x=0; x<texture.size(); x++) {
 			for (int y=0; y<texture[x].size(); y++) {
 				Point pt(y,x);
-				double b = pointPolygonTest(contour1, pt, false);
-				if (b == 0.0) texture[x][y] = in;
+				double bc = pointPolygonTest(cont, pt, false);
+				if (bc == 0.0) texture[x][y] = in;
 			}
 		}
 		in += inc;
@@ -347,13 +343,14 @@ int main(int argc, char **argv) {
     if (image.empty()) err("Could not open or find the image."); 
 	
 	unsigned thresh = 128;
-	float epsilon = 3.0;
-	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, debug = false;
+	float epsilon = 0.0;
+	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, debug = false;
 	int bw = 1;  // border width, default = 1
 	unsigned minarea = 0, minpoints=4;
 	unsigned rw, rh;
-	string noisefile;
+	string noisefile, fileextension="3mf";
 	float baseheight = 1.0;
+	float scale = 1.0;
 	int bevelevels = 1;
 	
 	bool foundbounds=false;
@@ -364,9 +361,9 @@ int main(int argc, char **argv) {
 	string destimage = "";
 	
 	//set up the random number generator
-	random_device seed;
-	mt19937 gen{seed()};
-	uniform_int_distribution<> dist{1, 150};
+	//random_device seed;
+	//mt19937 gen{seed()};
+	//uniform_int_distribution<> dist{1, 150};
 	
 	for (unsigned i=1; i<argc; i++) {
 		if(string(argv[i]).find("threshold") != string::npos) {  //parm threshold: rubicon between black and white for the gray->binary translation, betwee 0 and 255.  Default: 128
@@ -391,7 +388,7 @@ int main(int argc, char **argv) {
 				resize_image = true;
 			}
 		}
-		else if(string(argv[i]).find("epsilon") != string::npos) {  //parm epsilon: The value used to specify the degree of simplification of contours, larger is simpler.  Set to 0.0 to disable.  Default: 3.0
+		else if(string(argv[i]).find("epsilon") != string::npos) {  //parm epsilon: The value used to specify the degree of simplification of contours, larger is simpler.  Set to 0.0 to disable.  Default: 0.0
 			string e = val(argv[i]);
 			if (e.size() > 0) epsilon = atof(e.c_str());
 		}
@@ -408,7 +405,7 @@ int main(int argc, char **argv) {
 			string m = val(argv[i]);
 			if (m.size() > 0) minpoints = atoi(m.c_str());
 		}
-		else if(string(argv[i]).find("destimage") != string::npos) {  //parm destimage: if defined, outputs the original image wtih the contours drawn in red.  If not defined, program dumps an OpenSCAD array called 'p', contains the contours defined as point lists.
+		else if(string(argv[i]).find("destimage") != string::npos) {  //parm destimage: if defined, outputs the original image wtih the contours drawn in red and the contour numbers in the center.  If not defined, program dumps an OpenSCAD array called 'p', contains the contours defined as point lists.
 			destimage = val(argv[i]);
 		}
 		else if (string(argv[i]).find("boundingbox") != string::npos) { //parm boundingbox: if defined, the polygons are four-point polygons describing the contours' bounding boxes
@@ -416,6 +413,7 @@ int main(int argc, char **argv) {
 		}
 		else if (string(argv[i]).find("noisefile") != string::npos) { //parm noisefile: the noise network to pass to noisetool to get the texture
 			noisefile = val(argv[i]);
+			noisetexture = true;
 		}
 		else if (string(argv[i]).find("baseheight") != string::npos) { //parm baseheight: thickness of the base munged to the bottom of the texture
 			baseheight = atof(val(argv[i]).c_str());
@@ -424,33 +422,24 @@ int main(int argc, char **argv) {
 			string e = val(argv[i]);
 			if (e.size() > 0) bevelevels = atoi(e.c_str());
 		}
+		else if (string(argv[i]).find("scale") != string::npos) { //parm scale: thickness of the base munged to the bottom of the texture
+			scale = atof(val(argv[i]).c_str());
+			doscale=true;
+		}
+		else if (string(argv[i]).find("fileextension") != string::npos) { //parm fileextension: file type to save stones.  Default: 3mf
+			fileextension = val(argv[i]);
+		}
 		else if (string(argv[i]).find("debug") != string::npos) { 
 			debug = true;
 		}
 		else if (string(argv[i]).find("onestone") != string::npos) { 
 			onestone = atoi(val(argv[i]).c_str());
 		}
-		/*
-		else if (string(argv[i]).find("bashdims") != string::npos) { //parm bashdims: if defined, just print a bash array of the width/height x,ys to stdout
-			bashdims = true;
-		}
-		else if (string(argv[i]).find("cmddims") != string::npos) { //parm cmddims: if defined, just print a Windows batch file array of the width/height x,ys to stdout
-			cmddims = true;
-		}
-		*/
 	}
 	
 	if (debug)
 		if (!std::filesystem::is_directory(std::filesystem::path("stonetest")))
 			 std::filesystem::create_directory(std::filesystem::path("stonetest"));
-		
-	
-	
-	fprintf(stderr, "image dimensions: %dx%d\n", image.cols, image.rows);
-	fprintf(stderr, "threshold: %d  epsilon: %0.2f\n", thresh, epsilon);
-	if (resize) fprintf(stderr, "resize: %dx%d\n", rw, rh);
-	if (destimage.size() > 0) fprintf(stderr, "destimage: %s\n", destimage.c_str());
-	fflush(stderr);
 	
 	if (resize_image) {
 		resize(image, image, Size(rw, rh), 0, 0, INTER_LANCZOS4);
@@ -498,9 +487,6 @@ int main(int argc, char **argv) {
 			culledcontours.push_back(contour);
 		}
 	}
-	
-	fprintf(stderr, "poly count: %ld\n\n", culledcontours.size()+1); fflush(stderr);
-	
 
 	if (destimage.size() == 0) { // spit out OpenSCAD polygon points
 	
@@ -512,33 +498,38 @@ int main(int argc, char **argv) {
 		for (const auto& contour : culledcontours) {
 			
 			Rect r = boundingRect(contour);
-			string bx = to_string(random_number(0, 1000));
-			string by = to_string(random_number(0, 1000));
-			string bw = to_string( r.width);
-			string bh = to_string(r.height);
+			int bxi = random_number(0, 1000);
+			int byi = random_number(0, 1000);
+			int bwi = r.width;
+			int bhi = r.height;
+			int dwi = bwi;
+			int dhi = bhi;
+			
+			//cout << "bounds: " << bxi << "," << byi << "," << bwi << "," << bhi << endl;
+			
+			string bx = to_string(bxi);
+			string by = to_string(byi);
+			string bw = to_string(bwi);
+			string bh = to_string(bhi);
 			string dw = bw;
 			string dh = bh;
 			
-			//generate the stone texture heightmap with noisetool:
-			string cmdstring = "noisetool " + noisefile + " destfile=texture.txt bounds=" + bx + "," + by + "," + bw + "," + bh + " destsize=" + dw + "," + dh;
-			cout << cmdstring << endl;
-			system( cmdstring.c_str() );
-			
-			/*
-			// using hull() of points, does not preserve concave parts of the polygon
-			//vector<vector<float>> texture =  readTexture("texture.txt");		//read texture file generated by noisetool
-			std::vector<manifold::vec3> p;
-			cout << "contour size: " << contour.size() << endl;
-			for (auto c : contour)
-				p.push_back({(double) c.x, (double) c.y, 1});
-			for (auto c : contour)
-				p.push_back({(double) c.x, (double) c.y, 0});
-			manifold::Manifold stone = manifold::Manifold::Hull(p);
-			*/
-			
-			
-			////shape the texture to the contour:
-			vector<vector<float>> tex =  readTexture("texture.txt");		//read texture file generated by noisetool
+			vector<vector<float>> tex;
+			if (noisetexture) {
+				
+				LibNoiseTool nt;
+				nt.loadNetwork(noisefile);
+				nt.setBounds(bxi, byi, bwi, bhi);
+				nt.setDestSize(dwi, dhi);
+				nt.buildNetwork();
+				tex = nt.getHeightMap();
+			}
+			else {
+				tex = initTexture(r.width, r.height, 1.0);
+				
+			}
+
+			//shape the texture to the contour:
 			vector<Point> tc = translateContour(contour, -r.x, -r.y);		//get a copy of the contour translated to 0,0
 			vector<vector<float>> mu = initTexture(r.width, r.height, 1);	//multiplier texture
 			bevelTexture(mu, tc, bevelevels);								//apply bevel multipliers to multiplier texture
@@ -593,81 +584,21 @@ int main(int argc, char **argv) {
 			//intersect the contour and texture
 			manifold::Manifold stone = stonecont.Boolean(stonetext, manifold::OpType::Intersect);
 			
+			//scale the stone assembly, if specified
+			
+			if (doscale) {
+				cout << "scaling stone by " << scale << endl;
+				stone = stone.Scale({scale,scale,scale});
+			}
 			
 			//save the stone mesh:
-			manifold::ExportMesh(to_string(c)+".stl", stone.GetMeshGL(), {});
+			manifold::ExportMesh(to_string(c)+"."+fileextension, stone.GetMeshGL(), {});
 			
-			cout << "stone: " << c << ".3mf at " << r.x << "," << r.y << endl;
+			//cout << "stone: " << c << "." << fileextension << " at " << r.x << "," << r.y << endl;
 
 			//increment the stone number:
 			c++;
 		}
-	
-	
-/*
-		int count = 0;
-		cout << "//contour polygons" << endl;
-		cout << "p = [" << endl;
-		for (const auto& contour : culledcontours) {
-			cout << "  [" "   // " << count << endl;
-			count++;
-			for (const auto& point : contour) {
-				cout << "    [" << point.x << "," << point.y << "]"; // << endl;
-				if (point != contour[contour.size()-1]) cout << "," << endl; else cout << endl;
-				
-			}
-			cout << "  ]" ; //<< endl;
-			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
-		}
-		cout << "];" << endl << endl;
-		
-		//center points of each contour:
-		cout << endl << "//center points" << endl;
-		cout << "pc = [" << endl;
-		for (const auto& contour : culledcontours) {
-			Moments M = moments(contour);
-			int cx = int(M.m10 / M.m00);
-			int cy = int(M.m01 / M.m00);
-			cout << "  [" << cx << "," << cy << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
-		}
-		cout << "];" << endl << endl;
-		
-		//widths/heights of each contour:
-		cout << endl << "//widths/heights" << endl;
-		cout << "pw = [" << endl;
-		for (const auto& contour : culledcontours) {
-			Rect r = boundingRect(contour);
-			int wx = r.width-1;
-			int wy = r.height-1;
-			cout << "  [" << wx << "," << wy << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
-		}
-		cout << "];" << endl;
-		
-		cout << endl << "//translate coordinates" << endl;
-		cout << "pt = [" << endl;
-		for (const auto& contour : culledcontours) {
-			Rect r = boundingRect(contour);
-			int x = r.x;
-			int y = r.y;
-			cout << "  [" << x << "," << y << "," << "0" << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
-		}
-		cout << "];" << endl;
-		
-		cout << endl << "//user translate coordinates" << endl;
-		cout << "pr = [" << endl;
-		count = 0;
-		for (const auto& contour : culledcontours) {
-			cout << "  [" << 0 << "," << 0 << "," << 0 << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << ","; 
-			cout << "  // " << count << endl;
-			count++;
-		}
-		cout << "];" << endl;
-		*/
-
 
 	}
 	else {  //write test image instead
