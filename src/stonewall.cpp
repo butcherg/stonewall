@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
 	
 	unsigned thresh = 128;
 	float epsilon = 0.0;
-	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false;
+	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false, dosimplify=false;
 	int bw = 1;  // border width, default = 1
 	unsigned minarea = 0, minpoints=4;
 	unsigned rw, rh;
@@ -352,6 +352,7 @@ int main(int argc, char **argv) {
 	float baseheight = 1.0;
 	float scale = 1.0;
 	int bevelevels = 1;
+	double simplify = 0.0;
 	
 	bool foundbounds=false;
 	
@@ -424,6 +425,11 @@ int main(int argc, char **argv) {
 		else if (string(argv[i]).find("bevelevels") != string::npos) { //parm bevelevels: number of increments to bevel stone edges.  Default=1
 			string e = val(argv[i]);
 			if (e.size() > 0) bevelevels = atoi(e.c_str());
+		}
+		else if (string(argv[i]).find("simplify") != string::npos) { //parm bevelevels: number of increments to bevel stone edges.  Default=1
+			string e = val(argv[i]);
+			if (e.size() > 0) simplify = atof(e.c_str());
+			dosimplify=true;
 		}
 		else if (string(argv[i]).find("scale") != string::npos) { //parm scale: thickness of the base munged to the bottom of the texture
 			scale = atof(val(argv[i]).c_str());
@@ -650,10 +656,18 @@ int main(int argc, char **argv) {
 			//intersect the contour and texture
 			manifold::Manifold stone = stonecont.Boolean(stonetext, manifold::OpType::Intersect);
 			
-			//scale the stone assembly, if specified
+			//simplify the mesh, if specified
+			if (dosimplify) {
+				//cout << "simplifying mesh by" << simplify << endl;
+				int tri_in = stone.GetMeshGL().triVerts.size();
+				stone = stone.Simplify(simplify);
+				int tri_out = stone.GetMeshGL().triVerts.size();
+				if (debug) printf("in/out: %d/%d, triangle reduction: %2.0f%%\n", tri_in, tri_out, (1.0 - ((float) tri_out / (float) tri_in)) * 100.0); fflush(stdout);
+			}
 			
+			//scale the stone assembly, if specified
 			if (doscale) {
-				cout << "scaling stone by " << scale << endl;
+				//cout << "scaling stone by " << scale << endl;
 				stone = stone.Scale({scale,scale,scale});
 			}
 			
