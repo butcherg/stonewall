@@ -353,6 +353,7 @@ int main(int argc, char **argv) {
 	float scale = 1.0;
 	int bevelevels = 1;
 	double simplify = 0.0;
+	float walldepth = 1.0;
 	
 	bool foundbounds=false;
 	
@@ -440,6 +441,9 @@ int main(int argc, char **argv) {
 		else if (string(argv[i]).find("makewall") != string::npos) { //parm makewall: Instead of individual stones, union them with a backing as save as one file. '=filename' needs to be part of the makewall parameter, e.g., makewall=wallname (the default/specified fileextension will be appended).
 			wallfile = val(argv[i]);
 			makewall=true;
+		}
+		else if (string(argv[i]).find("walldepth") != string::npos) { //parm walldepth: thickness of the backing added to the stone assembly if "makewall" is specified.  Default: 1.0
+			walldepth = atof(val(argv[i]).c_str());
 		}
 		else if (string(argv[i]).find("fileextension") != string::npos) { //parm fileextension: file type to save stones.  Default: 3mf
 			fileextension = val(argv[i]);
@@ -690,7 +694,7 @@ int main(int argc, char **argv) {
 		}
 		
 		if (makewall) {
-			stones.push_back(manifold::Manifold::Cube({image.cols*scale, image.rows*scale, 1.0}).Translate({0.0, 0.0, -0.99}));
+			stones.push_back(manifold::Manifold::Cube({image.cols*scale, image.rows*scale, walldepth}).Translate({0.0, 0.0, -walldepth*0.9999}));
 			manifold::Manifold wall = manifold::Manifold::BatchBoolean(stones, manifold::OpType::Add);  //union
 			manifold::ExportMesh(wallfile+"."+fileextension, wall.GetMeshGL(), {});
 		}
