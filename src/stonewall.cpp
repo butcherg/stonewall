@@ -344,11 +344,11 @@ int main(int argc, char **argv) {
 	
 	unsigned thresh = 128;
 	float epsilon = 0.0;
-	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false, dosimplify=false;
+	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false, dosimplify=false, makewall=false;
 	int bw = 1;  // border width, default = 1
 	unsigned minarea = 0, minpoints=4;
 	unsigned rw, rh;
-	string noisefile, fileextension="3mf";
+	string noisefile, fileextension="3mf", wallfile;
 	float baseheight = 1.0;
 	float scale = 1.0;
 	int bevelevels = 1;
@@ -360,6 +360,8 @@ int main(int argc, char **argv) {
 	int onestone = -1;
 	
 	string destimage = "";
+	
+	vector<manifold::Manifold> stones;
 	
 	//set up the random number generator
 	//random_device seed;
@@ -434,6 +436,10 @@ int main(int argc, char **argv) {
 		else if (string(argv[i]).find("scale") != string::npos) { //parm scale: thickness of the base munged to the bottom of the texture
 			scale = atof(val(argv[i]).c_str());
 			doscale=true;
+		}
+		else if (string(argv[i]).find("makewall") != string::npos) { //parm makewall: Instead of individual stones, union them with a backing as save as one file. '=filename' needs to be part of the makewall parameter, e.g., makewall=wallname (the default/specified fileextension will be appended).
+			wallfile = val(argv[i]);
+			makewall=true;
 		}
 		else if (string(argv[i]).find("fileextension") != string::npos) { //parm fileextension: file type to save stones.  Default: 3mf
 			fileextension = val(argv[i]);
@@ -672,12 +678,21 @@ int main(int argc, char **argv) {
 			}
 			
 			//save the stone mesh:
-			manifold::ExportMesh(to_string(c)+"."+fileextension, stone.GetMeshGL(), {});
+			if (makewall)
+				stones.push_back(stone);
+			else
+				manifold::ExportMesh(to_string(c)+"."+fileextension, stone.GetMeshGL(), {});
 			
 			//cout << "stone: " << c << "." << fileextension << " at " << r.x << "," << r.y << endl;
 
 			//increment the stone number:
 			c++;
+		}
+		
+		if (makewall) {
+			stones.push_back(manifold::Manifold::Cube({image.cols*scale, image.rows*scale, 1.0}).Translate({0.0, 0.0, -0.99}));
+			manifold::Manifold wall = manifold::Manifold::BatchBoolean(stones, manifold::OpType::Add);  //union
+			manifold::ExportMesh(wallfile+"."+fileextension, wall.GetMeshGL(), {});
 		}
 
 	}
