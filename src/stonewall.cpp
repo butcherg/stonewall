@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
 	
 	unsigned thresh = 128;
 	float epsilon = 0.0;
-	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, debug = false;
+	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false;
 	int bw = 1;  // border width, default = 1
 	unsigned minarea = 0, minpoints=4;
 	unsigned rw, rh;
@@ -366,7 +366,13 @@ int main(int argc, char **argv) {
 	//uniform_int_distribution<> dist{1, 150};
 	
 	for (unsigned i=1; i<argc; i++) {
-		if(string(argv[i]).find("threshold") != string::npos) {  //parm threshold: rubicon between black and white for the gray->binary translation, betwee 0 and 255.  Default: 128
+		 if(string(argv[i]).find("destimage") != string::npos) {  //parm destimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones.
+			destimage = val(argv[i]);
+		}
+		else if (string(argv[i]).find("openscadarrays") != string::npos) { //parm openscadarrays: spits out OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones "stand proud".  Does not generate stones.
+			openscadarrays=true;
+		}
+		else if(string(argv[i]).find("threshold") != string::npos) {  //parm threshold: rubicon between black and white for the gray->binary translation, betwee 0 and 255.  Default: 128
 			string t = val(argv[i]);
 			if (t.size() > 0) thresh = atoi(t.c_str());
 		}
@@ -404,9 +410,6 @@ int main(int argc, char **argv) {
 		else if(string(argv[i]).find("minpoints") != string::npos) {  //parm minpoints: culls polygons with number of points less than this number.  Default: 4
 			string m = val(argv[i]);
 			if (m.size() > 0) minpoints = atoi(m.c_str());
-		}
-		else if(string(argv[i]).find("destimage") != string::npos) {  //parm destimage: if defined, outputs the original image wtih the contours drawn in red and the contour numbers in the center.  If not defined, program dumps an OpenSCAD array called 'p', contains the contours defined as point lists.
-			destimage = val(argv[i]);
 		}
 		else if (string(argv[i]).find("boundingbox") != string::npos) { //parm boundingbox: if defined, the polygons are four-point polygons describing the contours' bounding boxes
 			boundingbox = true;
@@ -488,8 +491,71 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (destimage.size() == 0) { // spit out OpenSCAD polygon points
-	
+	if (destimage.size() != 0) { //generate contour outline/index number image:
+		unsigned count=0;
+		for (const auto& contour : culledcontours) {
+			drawContours(image, vector<vector<Point>>{contour}, 0, Scalar(0, 0, 255), 1);
+			Moments M = moments(contour);
+			int cx = int(M.m10 / M.m00);
+			int cy = int(M.m01 / M.m00);
+			int baseline=0;
+			float fontScale = 0.5;
+			Size s = getTextSize(std::to_string(count), FONT_HERSHEY_COMPLEX_SMALL, fontScale, 1, &baseline);
+			cx -= s.width/2;
+			cy += s.height/2;
+			putText(image, std::to_string(count), Point(cx,cy), FONT_HERSHEY_COMPLEX_SMALL, fontScale, Scalar(0,0,255), 1, LINE_AA);
+			count++;
+		}
+		cv::imwrite(destimage, image);
+	}
+	else if (openscadarrays) { //spit OpenSCAD arrays to stdout
+		//center points of each contour:
+		cout << endl << "//center points" << endl;
+		cout << "pc = [" << endl;
+		for (const auto& contour : culledcontours) {
+			Moments M = moments(contour);
+			int cx = int(M.m10 / M.m00);
+			int cy = int(M.m01 / M.m00);
+			cout << "  [" << cx << "," << cy << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
+		}
+		cout << "];" << endl << endl;
+		
+		//widths/heights of each contour:
+		cout << endl << "//widths/heights" << endl;
+		cout << "pw = [" << endl;
+		for (const auto& contour : culledcontours) {
+			Rect r = boundingRect(contour);
+			int wx = r.width-1;
+			int wy = r.height-1;
+			cout << "  [" << wx << "," << wy << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
+		}
+		cout << "];" << endl;
+		
+		cout << endl << "//translate coordinates" << endl;
+		cout << "pt = [" << endl;
+		for (const auto& contour : culledcontours) {
+			Rect r = boundingRect(contour);
+			int x = r.x;
+			int y = r.y;
+			cout << "  [" << x << "," << y << "," << "0" << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
+		}
+		cout << "];" << endl;
+		
+		cout << endl << "//user translate coordinates" << endl;
+		cout << "pr = [" << endl;
+		int ccount = 0;
+		for (const auto& contour : culledcontours) {
+			cout << "  [" << 0 << "," << 0 << "," << 0 << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) cout << ","; 
+			cout << "  // " << ccount << endl;
+			ccount++;
+		}
+		cout << "];" << endl;
+	}
+	else {  //do the stone wall thing
 		unsigned c = 0;
 		if (onestone > -1) {
 			culledcontours = { culledcontours[onestone] };
@@ -600,23 +666,6 @@ int main(int argc, char **argv) {
 			c++;
 		}
 
-	}
-	else {  //write test image instead
-		unsigned count=0;
-		for (const auto& contour : culledcontours) {
-			drawContours(image, vector<vector<Point>>{contour}, 0, Scalar(0, 0, 255), 1);
-			Moments M = moments(contour);
-			int cx = int(M.m10 / M.m00);
-			int cy = int(M.m01 / M.m00);
-			int baseline=0;
-			float fontScale = 0.5;
-			Size s = getTextSize(std::to_string(count), FONT_HERSHEY_COMPLEX_SMALL, fontScale, 1, &baseline);
-			cx -= s.width/2;
-			cy += s.height/2;
-			putText(image, std::to_string(count), Point(cx,cy), FONT_HERSHEY_COMPLEX_SMALL, fontScale, Scalar(0,0,255), 1, LINE_AA);
-			count++;
-		}
-		cv::imwrite(destimage, image);
 	}
 
     return 0;
