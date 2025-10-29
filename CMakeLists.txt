@@ -95,7 +95,7 @@ if (DEFINED BUILD_MANIFOLD)
 	set(MANIFOLD_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/usr/include)
 	set(MANIFOLD_INC_DIR ${MANIFOLD_INCLUDE_DIR} CACHE STRING "manifold include directory" )
 	set(MANIFOLD_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/usr/lib)
-	set(MANIFOLD_LIB ${MANIFOLD_LIB_DIR}/libmanifold.a ${MANIFOLD_LIB_DIR}/libmanifoldc.a ${MANIFOLD_LIB_DIR}/libclipper2.a)
+	set(MANIFOLD_LIB ${MANIFOLD_LIB_DIR}/libmanifold.a ${MANIFOLD_LIB_DIR}/libmanifoldc.a ${MANIFOLD_LIB_DIR}/libClipper2.a)
 	
 	add_library(manifold STATIC IMPORTED)
 	set_target_properties(manifold PROPERTIES IMPORTED_LOCATION ${MANIFOLD_LIB_DIR} ) 
