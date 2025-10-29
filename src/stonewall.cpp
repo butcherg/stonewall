@@ -14,7 +14,7 @@
 
 #include "manifold/manifold.h"
 #include "manifold/cross_section.h"
-#include "meshio.h"
+#include "meshIO.h"
 
 #include "libnoisetool.h"
 
