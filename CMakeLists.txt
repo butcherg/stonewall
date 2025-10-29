@@ -186,7 +186,7 @@ endif ()
 
 
 
-target_link_libraries(stonewall -lassimp)
+#target_link_libraries(stonewall -lassimp)
 
 if(WIN32)
 #	target_link_libraries(stonewall wsock32 ws2_32 psapi)

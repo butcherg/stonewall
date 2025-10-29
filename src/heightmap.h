@@ -6,6 +6,9 @@
 #include <cmath>
 #include <cstdint>
 
+#include "mesh.h"
+
+/*
 struct vec3f {
 	float x, y, z;
 };
@@ -48,28 +51,6 @@ vec3f triangleNormal(vec3f p1, vec3f p2, vec3f p3)
 	return n;
 }
 
-std::vector<std::string> split(std::string s, std::string delim)
-{
-	std::vector<std::string> v;
-	if (s.find(delim) == std::string::npos) {
-		v.push_back(s);
-		return v;
-	}
-	size_t pos=0;
-	size_t start;
-	while (pos < s.length()) {
-		start = pos;
-		pos = s.find(delim,pos);
-		if (pos == std::string::npos) {
-			v.push_back(s.substr(start,s.length()-start));
-			return v;
-		}
-		v.push_back(s.substr(start, pos-start));
-		pos += delim.length();
-	}
-	return v;
-}
-
 class Mesh
 {
 public:
@@ -94,6 +75,29 @@ public:
 	std::vector<vec3f> points;
 	std::vector<vec3i> triangles;
 };
+*/
+
+std::vector<std::string> split(std::string s, std::string delim)
+{
+	std::vector<std::string> v;
+	if (s.find(delim) == std::string::npos) {
+		v.push_back(s);
+		return v;
+	}
+	size_t pos=0;
+	size_t start;
+	while (pos < s.length()) {
+		start = pos;
+		pos = s.find(delim,pos);
+		if (pos == std::string::npos) {
+			v.push_back(s.substr(start,s.length()-start));
+			return v;
+		}
+		v.push_back(s.substr(start, pos-start));
+		pos += delim.length();
+	}
+	return v;
+}
 
 class HeightMap 
 {
