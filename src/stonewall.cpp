@@ -414,7 +414,7 @@ int main(int argc, char **argv) {
 			string e = val(argv[i]);
 			if (e.size() > 0) bevelevels = atoi(e.c_str());
 		}
-		else if (string(argv[i]).find("simplify") != string::npos) { //parm bevelevels: number of increments to bevel stone edges.  Default=1
+		else if (string(argv[i]).find("simplify") != string::npos) { //parm simplify: consolidates planar triangles to simplify the stone mesh. Even a small simplify significantly reduces the computation burden for mesh operations and rendering.  Default=1
 			string e = val(argv[i]);
 			if (e.size() > 0) simplify = atof(e.c_str());
 			dosimplify=true;
