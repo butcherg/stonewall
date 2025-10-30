@@ -29,21 +29,7 @@
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
 
-/*
-struct vec3f {
-	float x, y, z;
-};
-
-struct vec3d {
-	double x, y, z;
-};
-
-struct vec3i {
-	unsigned x, y, z;
-};
-*/
-
-//extract parameter statements with:   grep "//parm" ../src/contours.cpp | awk -F'//parm' '{printf "cout << \"" $2 "\" << endl << endl;\n" }'
+//extract parameter statements with:   grep "//parm" ../src/stonewall.cpp | awk -F'//parm' '{printf "cout << \""$2 "\" << endl << endl;\n" }'
 
 
 using namespace cv;
@@ -75,7 +61,6 @@ std::vector<std::string> split(std::string s, std::string delim)
 
 vector<Point> translateContour(vector<Point> c, int x, int y)
 {
-	//printf("translateContour...\n"); fflush(stdout);
 	vector<Point> t;
 	for (auto p : c) 
 		t.push_back(Point(p.x+x,p.y+y));
@@ -84,7 +69,6 @@ vector<Point> translateContour(vector<Point> c, int x, int y)
 
 vector<vector<float>> readTexture(string filename)
 {
-	//printf("readTexture...\n"); fflush(stdout);
 	vector<vector<float>> t;
 	ifstream inputFile(filename);
 	if (inputFile.is_open()) {
@@ -103,7 +87,6 @@ vector<vector<float>> readTexture(string filename)
 
 bool writeTexture(vector<vector<float>> texture, string filename)
 {
-	//printf("writeTexture...\n"); fflush(stdout);
 	std::ofstream outputFile(filename);
 	if (!outputFile.is_open()) {
 		return false;
@@ -121,7 +104,6 @@ bool writeTexture(vector<vector<float>> texture, string filename)
 
 void printTexture(vector<vector<float>> texture)
 {
-	//printf("printTexture...\n"); fflush(stdout);
 	for (auto r : texture) {
 		for (auto c : r) {
 			//cout << c << " ";
@@ -142,7 +124,6 @@ float minTextureValue(vector<vector<float>> texture)
 
 void mapTexture(vector<vector<float>> &texture, vector<Point> contour)
 {
-	//printf("mapTexture...\n"); fflush(stdout);
 	Rect r = boundingRect(contour);
 	int cx = r.x;
 	int cy = r.y;
@@ -157,7 +138,6 @@ void mapTexture(vector<vector<float>> &texture, vector<Point> contour)
 
 vector<vector<float>> initTexture(unsigned w, unsigned h, double v)
 {
-	//printf("initTexture...\n"); fflush(stdout);
 	vector<vector<float>> t(h, vector<float>(w));
 	for (unsigned ty=0; ty<t.size(); ty++) {
 		for (unsigned tx=0; tx<t[ty].size(); tx++) {
@@ -169,7 +149,6 @@ vector<vector<float>> initTexture(unsigned w, unsigned h, double v)
 
 void bevelTextureOrig(vector<vector<float>> &texture, vector<Point> contour)
 {	
-	//printf("bevelTexture...\n"); fflush(stdout);
 	for (int i=0; i<texture.size(); i++) {
 	//for (int i=texture.size()-1; i>=0; i--) {
 		for (int j=0; j<texture[i].size(); j++) {
@@ -205,7 +184,6 @@ vector<Point> scaleContour(vector<Point> contour, float xscale, float yscale)
 void bevelTexture(vector<vector<float>> &texture, vector<Point> contour, int bevelevels)
 {
 	Rect r = boundingRect(contour);
-	//cout << "  width: " << r.width << "  height: " << r.height << endl;
 
 	for (int x=0; x<texture.size(); x++) {
 		for (int y=0; y<texture[x].size(); y++) {
@@ -226,7 +204,6 @@ void bevelTexture(vector<vector<float>> &texture, vector<Point> contour, int bev
 		float yscale = ((float) r.height-(float) i) / (float) r.height;
 		vector<Point> cont =  scaleContour(contour, xscale, yscale);
 		Rect rc = boundingRect(cont);
-		//cout << setprecision(2)<< "  i: " << i << "  xscale: " << xscale << "  yscale: " << yscale << "  width: " << rc.width << "  height: " << rc.height << " bevel inc: " << in << endl;
 		for (int x=0; x<texture.size(); x++) {
 			for (int y=0; y<texture[x].size(); y++) {
 				Point pt(y,x);
@@ -256,7 +233,6 @@ vector<vector<float>> flipTexture(vector<vector<float>> texture, bool fx, bool f
 
 void multiplyTexture(vector<vector<float>> &texture, vector<vector<float>> t)
 {
-	//printf("multiplyTexture...\n"); fflush(stdout);
 	if (texture.size() != t.size()) return;
 	if (texture[0].size() != t[0].size()) return;
 	for (unsigned i=0; i<texture.size(); i++) 
@@ -266,7 +242,6 @@ void multiplyTexture(vector<vector<float>> &texture, vector<vector<float>> t)
 
 void subtractValTexture(vector<vector<float>> &texture, float s)
 {
-	//printf("subtractValTexture...\n"); fflush(stdout);
 	for (unsigned i=0; i<texture.size(); i++) 
 		for (unsigned j=0; j<texture[0].size(); j++) 
 			texture[i][j] -= s;
@@ -293,23 +268,6 @@ vector<vector<float>> invertTexture(vector<vector<float>> texture, bool ud, bool
 	return t;
 }
 
-/*
-std::vector<std::vector<float>> flipTexture(std::vector<std::vector<float>> texture, bool fx, bool fy)
-{
-        std::vector<std::vector<float>> f = texture;
-        for (int x=0; x<texture.size(); x++) {
-                int rx;
-                if (fx) rx = (texture.size()-1) - x; else rx = x;
-                for (int y=0; y<texture[x].size(); y++) {
-                        int ry;
-                        if (fy) ry = (texture[x].size()-1) - y; else ry = y;
-                        f[x][y] = texture[rx][ry];
-                }
-        }
-        return f;
-}
-*/
-
 void err(string msg)
 {
 	cout << msg << endl;
@@ -331,20 +289,44 @@ float random_number(int lower, int upper)
 int main(int argc, char **argv) {
 	
 	if (argc < 2) {	
-		err("No input image specified");
-		//exit(EXIT_SUCCESS);
+		cout << "Usage: stonewall <inputimage.png> <parameter>..." << endl << endl;
+		cout << " testimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones." << endl << endl;
+		cout << " openscadarrays: spits out to a file named imagefilebasename.scad OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones 'stand proud'.  Does not generate stones." << endl << endl;
+		cout << " verbose: if present, stonewall prints progress messages during processing. Default: false" << endl << endl;
+		cout << " threshold: rubicon between black and white for the gray->binary translation, betwee 0 and 255.  Default: 128" << endl << endl;
+		cout << " resize: if defined, resizes the input image using WxH, e.g., 'resize:640x480'.  If either width or height is not specified, the resize of that dimension is calculated with the proportion of the defined dimension to the original image dimension, e.g., 'resize:640', or 'resize:x480'" << endl << endl;
+		cout << " epsilon: The value used to specify the degree of simplification of contours, larger is simpler.  Set to 0.0 to disable.  Default: 0.0" << endl << endl;
+		cout << " border: if defined, draws a white border around the image, useful for isolating contours that butt up against the image edge.  Default width: 1" << endl << endl;
+		cout << " minarea: minimum area of a valid contour.  Default: 0" << endl << endl;
+		cout << " minpoints: culls polygons with number of points less than this number.  Default: 4" << endl << endl;
+		cout << " boundingbox: if defined, the polygons are four-point polygons describing the contours' bounding boxes" << endl << endl;
+		cout << " noisefile: the noise network to pass to noisetool to get the texture" << endl << endl;
+		cout << " baseheight: thickness of the base munged to the bottom of the texture" << endl << endl;
+		cout << " bevelevels: number of increments to bevel stone edges.  Default=1" << endl << endl;
+		cout << " bevelevels: number of increments to bevel stone edges.  Default=1" << endl << endl;
+		cout << " scale: thickness of the base munged to the bottom of the texture" << endl << endl;
+		cout << " makestones: If specified, make a set of stone files instead of an integral wall.  Each stone file will be named 'n.3mf', with n=the stone sequence number.  Otherwise, a single .3mf file will be created, with the image basename." << endl << endl;
+		cout << " walldepth: thickness of the backing added to the stone assembly if 'makewall' is specified.  Default: 1.0" << endl << endl;
+		cout << " fileextension: file type to save stones.  Default: 3mf" << endl << endl;
+
+		exit(EXIT_SUCCESS);
 	}
 	
 	//set up the random number generator
 	srand(static_cast<unsigned int>(time(0)));
 	
+	//read the input image
     Mat image = imread(argv[1]);
 
     if (image.empty()) err("Could not open or find the image."); 
 	
+	//extract the basename of the input image file name
+	std::filesystem::path pth = std::string(argv[1]);
+	std::string basename = pth.stem().string();  //input filename without the extension
+	
 	unsigned thresh = 128;
 	float epsilon = 0.0;
-	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false, dosimplify=false, makewall=false;
+	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false, dosimplify=false, makestones=false, verbose=false;
 	int bw = 1;  // border width, default = 1
 	unsigned minarea = 0, minpoints=4;
 	unsigned rw, rh;
@@ -360,7 +342,7 @@ int main(int argc, char **argv) {
 	int texturetest = -1;
 	int onestone = -1;
 	
-	string destimage = "";
+	string testimage = "";
 	
 	vector<manifold::Manifold> stones;
 	
@@ -370,11 +352,14 @@ int main(int argc, char **argv) {
 	//uniform_int_distribution<> dist{1, 150};
 	
 	for (unsigned i=1; i<argc; i++) {
-		 if(string(argv[i]).find("destimage") != string::npos) {  //parm destimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones.
-			destimage = val(argv[i]);
+		 if(string(argv[i]).find("testimage") != string::npos) {  //parm testimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones.
+			testimage = val(argv[i]);
 		}
-		else if (string(argv[i]).find("openscadarrays") != string::npos) { //parm openscadarrays: spits out OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones "stand proud".  Does not generate stones.
+		else if (string(argv[i]).find("openscadarrays") != string::npos) { //parm openscadarrays: spits out to a file named imagefilebasename.scad OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones 'stand proud'.  Does not generate stones.
 			openscadarrays=true;
+		}
+		else if (string(argv[i]).find("verbose") != string::npos) {   //parm verbose: if present, stonewall prints progress messages during processing. Default: false
+			verbose = true;
 		}
 		else if(string(argv[i]).find("threshold") != string::npos) {  //parm threshold: rubicon between black and white for the gray->binary translation, betwee 0 and 255.  Default: 128
 			string t = val(argv[i]);
@@ -438,11 +423,11 @@ int main(int argc, char **argv) {
 			scale = atof(val(argv[i]).c_str());
 			doscale=true;
 		}
-		else if (string(argv[i]).find("makewall") != string::npos) { //parm makewall: Instead of individual stones, union them with a backing as save as one file. '=filename' needs to be part of the makewall parameter, e.g., makewall=wallname (the default/specified fileextension will be appended).
-			wallfile = val(argv[i]);
-			makewall=true;
+		else if (string(argv[i]).find("makestones") != string::npos) { //parm makestones: If specified, make a set of stone files instead of an integral wall.  Each stone file will be named 'n.3mf', with n=the stone sequence number.  Otherwise, a single .3mf file will be created, with the image basename.
+			//wallfile = val(argv[i]);
+			makestones=true;
 		}
-		else if (string(argv[i]).find("walldepth") != string::npos) { //parm walldepth: thickness of the backing added to the stone assembly if "makewall" is specified.  Default: 1.0
+		else if (string(argv[i]).find("walldepth") != string::npos) { //parm walldepth: thickness of the backing added to the stone assembly if 'makewall' is specified.  Default: 1.0
 			walldepth = atof(val(argv[i]).c_str());
 		}
 		else if (string(argv[i]).find("fileextension") != string::npos) { //parm fileextension: file type to save stones.  Default: 3mf
@@ -462,11 +447,15 @@ int main(int argc, char **argv) {
 	
 	if (resize_image) {
 		resize(image, image, Size(rw, rh), 0, 0, INTER_LANCZOS4);
+		if (verbose) cout << "resized input image width/height: " << image.cols << "," << image.rows << endl;
 	}
 	
 	if (border) {
 		copyMakeBorder( image, image, bw, bw, bw, bw, BORDER_CONSTANT, Scalar(0,0,0) );
+		if (verbose) cout << "input image added border: " << bw << "pix" << endl;
 	}
+	
+	if (verbose) cout << "input image width/height: " << image.cols << "," << image.rows << endl;
 
     // Convert to grayscale
     Mat gray;
@@ -488,7 +477,6 @@ int main(int argc, char **argv) {
 		if (contourArea(contour) < minarea) continue;  //too small
 		vector<Point> pts;
 		if (boundingbox) {
-			fprintf(stderr, "using bounding box..\n"); fflush(stderr);
 			Rect bb = boundingRect(contour);
 			vector<Point> pts;
 			pts.push_back(Point(bb.x, bb.y));
@@ -507,7 +495,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (destimage.size() != 0) { //generate contour outline/index number image:
+	if (testimage.size() != 0) { //generate contour outline/index number image:
+		if (verbose) cout << "generate contour outline/index image (no stones)..."  << endl;
 		unsigned count=0;
 		for (const auto& contour : culledcontours) {
 			drawContours(image, vector<vector<Point>>{contour}, 0, Scalar(0, 0, 255), 1);
@@ -522,54 +511,62 @@ int main(int argc, char **argv) {
 			putText(image, std::to_string(count), Point(cx,cy), FONT_HERSHEY_COMPLEX_SMALL, fontScale, Scalar(0,0,255), 1, LINE_AA);
 			count++;
 		}
-		cv::imwrite(destimage, image);
+		cv::imwrite(testimage, image);
 	}
-	else if (openscadarrays) { //spit OpenSCAD arrays to stdout
+	else if (openscadarrays) { //spit OpenSCAD arrays to basename.scad
+		if (verbose) cout << "print openscad arrays (no stones)..."  << endl;
+		std::ofstream ofile;
+		ofile.open(basename + ".scad"); 
+		if (!ofile.is_open()) exit(1);
+
 		//center points of each contour:
-		cout << endl << "//center points" << endl;
-		cout << "pc = [" << endl;
+		ofile << endl << "//center points" << endl;
+		ofile << "pc = [" << endl;
 		for (const auto& contour : culledcontours) {
 			Moments M = moments(contour);
 			int cx = int(M.m10 / M.m00);
 			int cy = int(M.m01 / M.m00);
-			cout << "  [" << cx << "," << cy << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
+			ofile << "  [" << cx << "," << cy << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) ofile << "," << endl; else ofile << endl;
 		}
-		cout << "];" << endl << endl;
+		ofile << "];" << endl << endl;
 		
 		//widths/heights of each contour:
-		cout << endl << "//widths/heights" << endl;
-		cout << "pw = [" << endl;
+		ofile << endl << "//widths/heights" << endl;
+		ofile << "pw = [" << endl;
 		for (const auto& contour : culledcontours) {
 			Rect r = boundingRect(contour);
 			int wx = r.width-1;
 			int wy = r.height-1;
-			cout << "  [" << wx << "," << wy << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
+			ofile << "  [" << wx << "," << wy << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) ofile << "," << endl; else ofile << endl;
 		}
-		cout << "];" << endl;
+		ofile << "];" << endl;
 		
-		cout << endl << "//translate coordinates" << endl;
-		cout << "pt = [" << endl;
+		//translate coordinates
+		ofile << endl << "//translate coordinates" << endl;
+		ofile << "pt = [" << endl;
 		for (const auto& contour : culledcontours) {
 			Rect r = boundingRect(contour);
 			int x = r.x;
 			int y = r.y;
-			cout << "  [" << x << "," << y << "," << "0" << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << "," << endl; else cout << endl;
+			ofile << "  [" << x << "," << y << "," << "0" << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) ofile << "," << endl; else ofile << endl;
 		}
-		cout << "];" << endl;
+		ofile << "];" << endl;
 		
-		cout << endl << "//user translate coordinates" << endl;
-		cout << "pr = [" << endl;
+		//user translate coordinates, user edits to suit
+		ofile << endl << "//user translate coordinates" << endl;
+		ofile << "pr = [" << endl;
 		int ccount = 0;
 		for (const auto& contour : culledcontours) {
-			cout << "  [" << 0 << "," << 0 << "," << 0 << "]";
-			if (contour != culledcontours[culledcontours.size()-1]) cout << ","; 
-			cout << "  // " << ccount << endl;
+			ofile << "  [" << 0 << "," << 0 << "," << 0 << "]";
+			if (contour != culledcontours[culledcontours.size()-1]) ofile << ","; 
+			ofile << "  // " << ccount << endl;
 			ccount++;
 		}
-		cout << "];" << endl;
+		ofile << "];" << endl;
+		ofile.close();
 	}
 	else {  //do the stone wall thing
 		unsigned c = 0;
@@ -577,6 +574,11 @@ int main(int argc, char **argv) {
 			culledcontours = { culledcontours[onestone] };
 			c = onestone;
 		}
+		if (verbose)  
+			if (culledcontours.size() == 1) 
+				cout << "generating 1 stone (" << onestone << ")" << endl;
+			else
+				cout << "generating " << culledcontours.size() << " stones" << endl;
 		for (const auto& contour : culledcontours) {
 			
 			Rect r = boundingRect(contour);
@@ -586,8 +588,6 @@ int main(int argc, char **argv) {
 			int bhi = r.height;
 			int dwi = bwi;
 			int dhi = bhi;
-			
-			//cout << "bounds: " << bxi << "," << byi << "," << bwi << "," << bhi << endl;
 			
 			string bx = to_string(bxi);
 			string by = to_string(byi);
@@ -621,7 +621,7 @@ int main(int argc, char **argv) {
 			if (debug) writeTexture(tex, "stonetest/tex"+to_string(c)+".txt");
 			if (debug) writeTexture(mu, "stonetest/mu"+to_string(c)+".txt");			
 			
-			//put bottom of texture at zero:
+			//translate bottom of texture at zero:
 			float texmin = minTextureValue(tex);
 			subtractValTexture(tex, texmin);
 			
@@ -655,7 +655,6 @@ int main(int argc, char **argv) {
 			if (contourArea(contour, true) < 0.0) std::reverse(p.begin(), p.end());  //determines winding of the polygon, reverses order of points if not CCW
 			manifold::Polygons xc;
 			xc.push_back(p);
-			//xc = manifold::CrossSection(xc).ToPolygons();
 			manifold::Manifold stonecont = manifold::Manifold::Extrude(xc,20);
 
 			//translate contour down to encompass texture:
@@ -681,23 +680,31 @@ int main(int argc, char **argv) {
 				stone = stone.Scale({scale,scale,scale});
 			}
 			
-			//save the stone mesh:
-			if (makewall)
-				stones.push_back(stone);
-			else
+			//export the stone mesh, or save in a vector for wall-making:
+			if (makestones )
 				manifold::ExportMesh(to_string(c)+"."+fileextension, stone.GetMeshGL(), {});
-			
-			//cout << "stone: " << c << "." << fileextension << " at " << r.x << "," << r.y << endl;
+			else
+				stones.push_back(stone);
 
-			//increment the stone number:
+			//increment the stone number for the next round:
 			c++;
 		}
 		
-		if (makewall) {
+		//assemble stones and backing into a wall and export
+		if (!makestones) {
 			stones.push_back(manifold::Manifold::Cube({image.cols*scale, image.rows*scale, walldepth}).Translate({0.0, 0.0, -walldepth*0.9999}));
 			manifold::Manifold wall = manifold::Manifold::BatchBoolean(stones, manifold::OpType::Add);  //union
-			manifold::ExportMesh(wallfile+"."+fileextension, wall.GetMeshGL(), {});
+			if (wallfile.size() > 0) {
+				manifold::ExportMesh(wallfile+"."+fileextension, wall.GetMeshGL(), {});
+				if (verbose) cout << "made single wall file " << wallfile+"."+fileextension <<", wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
+			}
+			else {
+				manifold::ExportMesh(basename+"."+fileextension, wall.GetMeshGL(), {});
+				if (verbose) cout << "made single wall file " << basename+"."+fileextension <<", wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
+			}
 		}
+		else 
+			if (verbose) cout << "made " << culledcontours.size() << " stone files, wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
 
 	}
 
