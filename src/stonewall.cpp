@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
 	//uniform_int_distribution<> dist{1, 150};
 	
 	for (unsigned i=1; i<argc; i++) {
-		 if(string(argv[i]).find("testimage") != string::npos) {  //parm testimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones.
+		 if(string(argv[i]).find("testimage") != string::npos) {  //parm testimage=<imagefile>.png: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones.
 			testimage = val(argv[i]);
 		}
 		else if (string(argv[i]).find("openscadarrays") != string::npos) { //parm openscadarrays: spits out to a file named imagefilebasename.scad OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones 'stand proud'.  Does not generate stones.
@@ -629,7 +629,7 @@ int main(int argc, char **argv) {
 			int h = tex[0].size();
 			
 			//make manifold mesh from the heightmap texture:
-			std::pair<std::vector<vec3f>, std::vector<vec3i>> msh = heightmap2Mesh(tex, 1);
+			std::pair<std::vector<vec3f>, std::vector<vec3i>> msh = heightmap2Mesh(tex, baseheight);
 			auto points = msh.first;
 			auto triangles = msh.second;
 			
