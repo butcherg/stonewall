@@ -19,13 +19,13 @@ Mesh::Mesh() {
 	triangles.clear();
 }
 
-int Mesh::setPt(vec3f p)
+unsigned Mesh::setPt(vec3f p)
 {
 	points.push_back(p);
 	return points.size()-1;
 }
 	
-int Mesh::setTri(vec3i t)
+unsigned Mesh::setTri(vec3i t)
 {
 	triangles.push_back(t);
 	return triangles.size()-1;

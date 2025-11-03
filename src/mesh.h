@@ -35,8 +35,8 @@ class Mesh
 public:
 	Mesh();
 	
-	int setPt(vec3f p);
-	int setTri(vec3i t);
+	unsigned setPt(vec3f p);
+	unsigned setTri(vec3i t);
 	
 	bool SaveMesh(const std::string &filename);
 	bool SaveBinarySTL(const std::string &filename);
