@@ -7,6 +7,19 @@ In the quest to develop stone walls for a scale modeling project, I originally d
 
 stonewall takes as input a .png image that depicts the wall layout of stones, black background, white stones, and produces either a set of stones or a consolidated wall (.3mf or .stl files) for further CAD incorporation into a modeling project.  Also input is a texture definition file used by libnoise to produce a network of operators from which the stone tecture is developed.  A large number of command line parameters are provided to control the generation process.
 
+## Example
+
+stonewall uses this image:
+
+![wall profile](wall.png)
+
+to make a .stl or .3mf wall file that looks like this:
+
+![wall 3d render](wall_render-small.png)
+
+The wall file can then be imported to most any CAD program for cutting out the window openings, etc.
+
+
 ## Usage
 
 ```
