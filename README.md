@@ -9,11 +9,11 @@ stonewall takes as input a .png image that depicts the wall layout of stones, bl
 
 ## Example
 
-stonewall uses this image:
+stonewall uses images like this:
 
 ![wall profile](wall.png)
 
-to make a .stl or .3mf wall file that looks like this:
+to make .stl or .3mf wall files that looks like this:
 
 ![wall 3d render](wall_render-small.png)
 
