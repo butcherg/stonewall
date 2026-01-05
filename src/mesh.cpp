@@ -146,13 +146,13 @@ bool Mesh::Save3MF(const std::string &filename)
 	buffer << std::setprecision(18);
 
 	for (std::vector<vec3f>::const_iterator i = points.begin(); i != points.end(); i++)
-		buffer << "<vertex x=\"" << (*i).x << "\" y=\"" << (*i).y << "\" z=\"" << (*i).z << "\" />" << std::endl;
+		buffer << "            <vertex x=\"" << (*i).x << "\" y=\"" << (*i).y << "\" z=\"" << (*i).z << "\" />" << std::endl;
 
 	buffer << "          </vertices>" << std::endl;
 	buffer << "          <triangles>" << std::endl;
 
 	for (std::vector<vec3i>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
-		buffer << "<triangle v1=\"" << (*i).x << "\" v2=\"" << (*i).y << "\" v3=\"" << (*i).z << "\" />" << std::endl;
+		buffer << "            <triangle v1=\"" << (*i).x << "\" v2=\"" << (*i).y << "\" v3=\"" << (*i).z << "\" />" << std::endl;
 
 	buffer << "          </triangles>" << std::endl;
 	buffer << "        </mesh>" << std::endl;
