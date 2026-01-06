@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
 		cout << " noisefile: the noise network to pass to noisetool to get the texture" << endl << endl;
 		cout << " baseheight: thickness of the base munged to the bottom of the texture" << endl << endl;
 		cout << " bevelevels: number of increments to bevel stone edges.  Default=1" << endl << endl;
-		cout << " bevelevels: number of increments to bevel stone edges.  Default=1" << endl << endl;
+		cout << " simplify: consolidates planar triangles to simplify the stone mesh.  Default=0.0" << endl << endl;
 		cout << " scale: thickness of the base munged to the bottom of the texture" << endl << endl;
 		cout << " makestones: If specified, make a set of stone files instead of an integral wall.  Each stone file will be named 'n.3mf', with n=the stone sequence number.  Otherwise, a single .3mf file will be created, with the image basename." << endl << endl;
 		cout << " walldepth: thickness of the backing added to the stone assembly if 'makewall' is specified.  Default: 1.0" << endl << endl;
@@ -414,7 +414,7 @@ int main(int argc, char **argv) {
 			string e = val(argv[i]);
 			if (e.size() > 0) bevelevels = atoi(e.c_str());
 		}
-		else if (string(argv[i]).find("simplify") != string::npos) { //parm simplify: consolidates planar triangles to simplify the stone mesh. Even a small simplify significantly reduces the computation burden for mesh operations and rendering.  Default=1
+		else if (string(argv[i]).find("simplify") != string::npos) { //parm simplify: consolidates planar triangles to simplify the stone mesh. Even a small simplify significantly reduces the computation burden for mesh operations and rendering.  Default=0.0
 			string e = val(argv[i]);
 			if (e.size() > 0) simplify = atof(e.c_str());
 			dosimplify=true;
@@ -692,7 +692,7 @@ int main(int argc, char **argv) {
 		
 		//assemble stones and backing into a wall and export
 		if (!makestones) {
-			stones.push_back(manifold::Manifold::Cube({image.cols*scale, image.rows*scale, walldepth}).Translate({0.0, 0.0, -walldepth*0.9999}));
+			stones.push_back(manifold::Manifold::Cube({image.cols*scale, image.rows*scale, walldepth}).Translate({0.0, 0.0, -(walldepth+baseheight)+0.9999}));
 			manifold::Manifold wall = manifold::Manifold::BatchBoolean(stones, manifold::OpType::Add);  //union
 			if (wallfile.size() > 0) {
 				manifold::ExportMesh(wallfile+"."+fileextension, wall.GetMeshGL(), {});
