@@ -78,7 +78,6 @@ The options are:
 stonewall uses the following libraries under the terms of the respective licenses:
 
 - libnoise, coherent noise generator: https://github.com/eXpl0it3r/libnoise, LGPL 2.1
-- 
 - OpenCV, image processing: https://github.com/opencv/opencv, Apache 2.0
 - Manifold, B-rep mesh processing: https://github.com/elalish/manifold, Apache 2.0
 - miniz, zip compression: https://github.com/richgel999/miniz, MIT
@@ -87,11 +86,6 @@ stonewall uses code extracted from the following libraries:
 
 - noisetool, command line encapsulation of libnoise: https://github.com/butcherg/noisetool, GPL 3.0
   - Extracted the noise processor for incorporation into stonewall, so one doesn't have to download noistool separately
-- hmm, heightmap meshing: https://github.com/fogleman/hmm, MIT:
-  - SaveBinarySTL(): https://github.com/fogleman/hmm/blob/master/src/stl.cpp, edited to remove glm dependency
-  - various hints to implement an OpenSCAD-equivalent heightmap mesh
-- Binary_STL_to_3MF, 3mf export routine: https://github.com/sjhalayka/Binary_STL_to_3MF, no license
-  - Used write_3fm_to_oss_buffer() organization to write an abbreviated 3MF file export routine
 
 ## License
 MIT
