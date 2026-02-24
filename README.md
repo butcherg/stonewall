@@ -27,10 +27,6 @@ $ stonewall <inputimagefile> [param=value [param=value]... ]
 ```
 Where param can be any of the following, in any order to the right of the input image file:
 
-- testimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones.
-- openscadarrays: spits out to a file named imagefilebasename.scad OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones 'stand proud'.  Does not generate stones.
-- verbose: if present, stonewall prints progress messages during processing. Default: false
-- threshold: rubicon between black and white for the gray->binary translation, betwee 0 and 255.  Default: 128
 - resize: if defined, resizes the input image using WxH, e.g., 'resize:640x480'.  If either width or height is not specified, the resize of that dimension is calculated with the proportion of the defined dimension to the original image dimension, e.g., 'resize:640', or 'resize:x480'
 - epsilon: The value used to specify the degree of simplification of contours, larger is simpler.  Set to 0.0 to disable.  Default: 0.0
 - border: if defined, draws a white border around the image, useful for isolating contours that butt up against the image edge.  Default width: 1
@@ -40,11 +36,17 @@ Where param can be any of the following, in any order to the right of the input 
 - noisefile: the noise network to pass to noisetool to get the texture
 - baseheight: thickness of the base munged to the bottom of the texture
 - bevelevels: number of increments to bevel stone edges.  Default=1
-- simplify: consolidates planar triangles to simplify the stone mesh. Even a small simplify significantly reduces the computation burden for mesh operations and rendering.  Default=1
-- scale: thickness of the base munged to the bottom of the texture
-- makestones: If specified, make a set of stone files instead of an integral wall.  Each stone file will be named 'n.3mf', with n=the stone sequence number.  Otherwise, a single .3mf file will be created, with the image basename.
-- walldepth: thickness of the backing added to the stone assembly if 'makewall' is specified.  Default: 1.0
-- fileextension: file type to save stones.  Default: 3mf
+- simplify: consolidates planar triangles to simplify the stone mesh.  Default=0.0
+- scale: changes the size of the completed stone/wall by the given multiplier"
+- walldepth: thickness of the backing added to the stone assembly if 'output=wall' is specified.  Default: 1.0
+- <s>fileextension: mesh file type to save stones/walls.  Default: 3mf</s> stonewall now only supports 3MF files
+- output: What the program generates.  Four options: 
+  - testimage: makes a copy of the input image with the contours drawn in red and labeled with their sequence numbers
+  - openscadarrays: writes a file named imagefilebasename.scad, containing OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different heights to make individual stones 'stand proud')
+  - wall: adds a backing cube to the stone collection to make a single wall file.
+  - stones: outputs each stone as a separate mesh file, named with the sequence number of the stone, e.g., '0.3mf'
+  - stonefile: outputs each stone as a separate mesh in a single file.  Only works with .3mf files.
+
 
 The generated OpenSCAD code is a collection of arrays-of-arrays:
 
