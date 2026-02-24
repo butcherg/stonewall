@@ -290,8 +290,8 @@ int main(int argc, char **argv) {
 	
 	if (argc < 2) {	
 		cout << "Usage: stonewall <inputimage.png> <parameter>..." << endl << endl;
-		cout << " testimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones." << endl << endl;
-		cout << " openscadarrays: spits out to a file named imagefilebasename.scad OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones 'stand proud'.  Does not generate stones." << endl << endl;
+		//cout << " testimage: if defined, outputs a copy of the original image wtih the contours drawn in red and the contour numbers in the center.  Does not generate stones or walls." << endl << endl;
+		//cout << " openscadarrays: spits out to a file named imagefilebasename.scad OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different height to make individual stones 'stand proud'.  Does not generate stones or walls ." << endl << endl;
 		cout << " verbose: if present, stonewall prints progress messages during processing. Default: false" << endl << endl;
 		cout << " threshold: rubicon between black and white for the gray->binary translation, betwee 0 and 255.  Default: 128" << endl << endl;
 		cout << " resize: if defined, resizes the input image using WxH, e.g., 'resize:640x480'.  If either width or height is not specified, the resize of that dimension is calculated with the proportion of the defined dimension to the original image dimension, e.g., 'resize:640', or 'resize:x480'" << endl << endl;
@@ -305,9 +305,15 @@ int main(int argc, char **argv) {
 		cout << " bevelevels: number of increments to bevel stone edges.  Default=1" << endl << endl;
 		cout << " simplify: consolidates planar triangles to simplify the stone mesh.  Default=0.0" << endl << endl;
 		cout << " scale: thickness of the base munged to the bottom of the texture" << endl << endl;
-		cout << " makestones: If specified, make a set of stone files instead of an integral wall.  Each stone file will be named 'n.3mf', with n=the stone sequence number.  Otherwise, a single .3mf file will be created, with the image basename." << endl << endl;
-		cout << " walldepth: thickness of the backing added to the stone assembly if 'makewall' is specified.  Default: 1.0" << endl << endl;
-		cout << " fileextension: file type to save stones.  Default: 3mf" << endl << endl;
+		//cout << " makestones: If specified, make a set of stone files instead of an integral wall.  Each stone file will be named 'n.3mf', with n=the stone sequence number.  Otherwise, a single .3mf file will be created, with the image basename." << endl << endl;
+		cout << " walldepth: thickness of the backing added to the stone assembly if 'output=wall' is specified.  Default: 1.0" << endl << endl;
+		cout << " fileextension: mesh file type to save stones/walls.  Default: 3mf" << endl << endl;
+		cout << " output: What the program generates.  Four options: " << endl;
+		cout << "    1. testimage: makes a copy of the input image with the contours drawn in red and labeled with their sequence numbers"  << endl;
+		cout << "    2. openscadarrays: writes a file named imagefilebasename.scad, containing OpenSCAD arrays for contour width/heights, centers, translation, and a set of [0,0,0] arrays for user-specified translation (usually different heights to make individual stones 'stand proud')" << endl;
+		cout << "    2. wall: adds a backing cube to the stone collection to make a single wall file." << endl;
+		cout << "    3. stones: outputs each stone as a separate mesh file, named with the sequence number of the stone, e.g., '0.3mf'" << endl;
+		cout << "    4. stonefile: outputs each stone as a separate mesh in a single file.  Only works with .3mf files." << endl;
 
 		exit(EXIT_SUCCESS);
 	}
@@ -326,7 +332,7 @@ int main(int argc, char **argv) {
 	
 	unsigned thresh = 128;
 	float epsilon = 0.0;
-	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false, dosimplify=false, makestones=false, verbose=false;
+	bool border = false, resize_image = false, boundingbox = false, bashdims = false, cmddims = false, noisetexture=false, doscale=false, openscadarrays=false, debug = false, dosimplify=false, makestones=false, stonefile=false, verbose=false;
 	int bw = 1;  // border width, default = 1
 	unsigned minarea = 0, minpoints=4;
 	unsigned rw, rh;
@@ -433,6 +439,29 @@ int main(int argc, char **argv) {
 		else if (string(argv[i]).find("fileextension") != string::npos) { //parm fileextension: file type to save stones.  Default: 3mf
 			fileextension = val(argv[i]);
 		}
+		else if (string(argv[i]).find("output") != string::npos) {
+			string option = val(argv[i]);
+			if (option == "testimage") {
+				testimage = val(argv[i])+"_test";
+			}
+			else if (option == "openscadarrays") {
+				openscadarrays=true;
+			}
+			else if (option == "wall") {
+				makestones=false;
+			}
+			else if (option == "stones") {
+				makestones=true;
+				stonefile=false;
+			}
+			else if (option == "stonefile") {
+				makestones=true;
+				stonefile=true;
+			}
+			else err("unknown output option: "+option);
+		}
+		
+		
 		else if (string(argv[i]).find("debug") != string::npos) { 
 			debug = true;
 		}
@@ -646,7 +675,7 @@ int main(int argc, char **argv) {
 			//translate texture mesh to the contour location:
 			stonetext = stonetext.Translate({(double) r.x, (double) r.y, 0.0});
 			
-			if (debug) manifold::ExportMesh("stonetest/tex"+to_string(c)+".stl", stonetext.GetMeshGL(), {});
+			if (debug) ExportMesh3MF("stonetest/tex"+to_string(c)+".stl", stonetext.GetMeshGL());
 			
 			//make a Manifold of the contour polygon:
 			manifold::SimplePolygon p;
@@ -660,7 +689,7 @@ int main(int argc, char **argv) {
 			//translate contour down to encompass texture:
 			stonecont = stonecont.Translate({0.0, 0.0, -5.0});
 			
-			if (debug) manifold::ExportMesh("stonetest/cont"+to_string(c)+".stl", stonecont.GetMeshGL(), {});
+			if (debug) ExportMesh3MF("stonetest/cont"+to_string(c)+".stl", stonecont.GetMeshGL());
 			
 			//intersect the contour and texture
 			manifold::Manifold stone = stonecont.Boolean(stonetext, manifold::OpType::Intersect);
@@ -681,30 +710,46 @@ int main(int argc, char **argv) {
 			}
 			
 			//export the stone mesh, or save in a vector for wall-making:
-			if (makestones )
-				manifold::ExportMesh(to_string(c)+"."+fileextension, stone.GetMeshGL(), {});
-			else
+			//if (makestones )
+			//	manifold::ExportMesh(to_string(c)+"."+fileextension, stone.GetMeshGL(), {});
+			//else
 				stones.push_back(stone);
 
 			//increment the stone number for the next round:
 			c++;
 		}
 		
-		//assemble stones and backing into a wall and export
-		if (!makestones) {
+		if (makestones) {
+			if (stonefile) {
+				//make 1 3mf with all stones
+				vector<manifold::MeshGL> meshes;
+				for (auto stone : stones)
+					meshes.push_back(stone.GetMeshGL());
+				if (!ExportMeshes3MF(basename+".3mf", meshes))
+					err("export of single stone file failed.");
+				if (verbose) cout << "made a single file of "+to_string(stones.size())+" stones: "<< basename+".3mf" << endl;
+			}
+			else {
+				//make 3mf of each stone
+				for (int i=0; i<stones.size(); i++)
+					if (!ExportMesh3MF(to_string(i)+".3mf", stones[i].GetMeshGL()))
+						err("export of stone file"+to_string(i)+".3mf failed.");
+					if (verbose) cout << "made "+to_string(stones.size())+" stone files" << endl;
+			}
+		}
+		else {
+			//make wall
 			stones.push_back(manifold::Manifold::Cube({image.cols*scale, image.rows*scale, walldepth}).Translate({0.0, 0.0, -(walldepth+baseheight)+0.9999}));
 			manifold::Manifold wall = manifold::Manifold::BatchBoolean(stones, manifold::OpType::Add);  //union
 			if (wallfile.size() > 0) {
-				manifold::ExportMesh(wallfile+"."+fileextension, wall.GetMeshGL(), {});
-				if (verbose) cout << "made single wall file " << wallfile+"."+fileextension <<", wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
+				ExportMesh3MF(wallfile+"."+fileextension, wall.GetMeshGL());
+				if (verbose) cout << "made single wall file: " << wallfile+"."+fileextension <<", wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
 			}
 			else {
-				manifold::ExportMesh(basename+"."+fileextension, wall.GetMeshGL(), {});
-				if (verbose) cout << "made single wall file " << basename+"."+fileextension <<", wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
+				ExportMesh3MF(basename+"."+fileextension, wall.GetMeshGL());
+				if (verbose) cout << "made single wall file: " << basename+"."+fileextension <<", wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
 			}
 		}
-		else 
-			if (verbose) cout << "made " << culledcontours.size() << " stone files, wall dimensions: " << image.cols*scale << "x" << image.rows*scale << endl;
 
 	}
 
